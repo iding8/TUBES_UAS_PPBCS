@@ -43,6 +43,8 @@ Flutter (Presentation Layer)  --HTTP/JSON-->  Laravel REST API (Application Laye
 
 5. Buat akun petugas via halaman **Daftar** (atau lewat Postman ke `POST /api/register`), lalu login.
 
+link gdrive : https://drive.google.com/drive/folders/1iJ0V1iFl3CvfceQLaUB-k6IPVu_Js_ce
+
 ## Struktur Folder
 ```
 lib/
