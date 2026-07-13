@@ -22,6 +22,7 @@ class AuthController extends Controller
             'name'     => $request->name,
             'email'    => $request->email,
             'password' => Hash::make($request->password),
+            'role'     => 'staff', // akun baru selalu staff; admin diset manual lewat tinker/seeder
         ]);
 
         $token = $user->createToken('klinik-token')->plainTextToken;

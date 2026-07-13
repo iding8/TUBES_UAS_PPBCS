@@ -2,8 +2,11 @@ import 'api_client.dart';
 import '../models/pasien.dart';
 
 class PasienService {
-  static Future<List<Pasien>> getAll() async {
-    final data = await ApiClient.get('/pasien');
+  static Future<List<Pasien>> getAll({String? search}) async {
+    final query = (search != null && search.isNotEmpty)
+        ? '?search=${Uri.encodeQueryComponent(search)}'
+        : '';
+    final data = await ApiClient.get('/pasien$query');
     final list = data['data'] as List;
     return list.map((e) => Pasien.fromJson(e)).toList();
   }

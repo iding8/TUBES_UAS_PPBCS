@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../auth/login_page.dart';
+import 'dashboard_page.dart';
 import 'pasien_page.dart';
 import 'dokter_page.dart';
 import 'jadwal_page.dart';
 import 'antrian_page.dart';
 import 'rekam_medis_page.dart';
+import 'profile_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -18,6 +20,7 @@ class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = const [
+    DashboardPage(),
     PasienPage(),
     DokterPage(),
     JadwalPage(),
@@ -26,12 +29,23 @@ class _HomePageState extends State<HomePage> {
   ];
 
   final List<String> _titles = const [
+    'Dashboard',
     'Data Pasien',
     'Data Dokter',
     'Jadwal Pemeriksaan',
     'Antrian',
     'Rekam Medis',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Kalau app baru dibuka ulang (token lama masih tersimpan), currentUser
+    // (termasuk role admin/staff) belum terisi -> ambil ulang dari /api/me.
+    if (AuthService.currentUser == null) {
+      AuthService.me().then((_) => setState(() {})).catchError((_) {});
+    }
+  }
 
   Future<void> _confirmLogout() async {
     final confirm = await showDialog<bool>(
@@ -76,18 +90,7 @@ class _HomePageState extends State<HomePage> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: Image.asset(
-                  'assets/1.jpeg',
-                  height: 32,
-                  width: 32,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(Icons.local_hospital, size: 24, color: Colors.blue);
-                  },
-                ),
-              ),
+              child: const Icon(Icons.local_hospital, size: 24, color: Colors.blue),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -102,6 +105,15 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.account_circle),
+            tooltip: 'Profile',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ProfilePage()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Logout',
@@ -119,6 +131,7 @@ class _HomePageState extends State<HomePage> {
           setState(() => _selectedIndex = index);
         },
         destinations: const [
+          NavigationDestination(icon: Icon(Icons.dashboard), label: 'Dashboard'),
           NavigationDestination(icon: Icon(Icons.person), label: 'Pasien'),
           NavigationDestination(icon: Icon(Icons.medical_services), label: 'Dokter'),
           NavigationDestination(icon: Icon(Icons.calendar_today), label: 'Jadwal'),

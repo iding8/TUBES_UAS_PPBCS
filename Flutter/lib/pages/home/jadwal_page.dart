@@ -121,7 +121,11 @@ class _JadwalPageState extends State<JadwalPage> {
               ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showJadwalForm(context),
+        onPressed: () async {
+          await _loadData();
+          if (!context.mounted) return;
+          _showJadwalForm(context);
+        },
         child: const Icon(Icons.add),
       ),
     );

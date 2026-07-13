@@ -20,7 +20,6 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
         useMaterial3: true,
-        fontFamily: 'Poppins',
       ),
       // Jika token tersimpan (pernah login), langsung ke Home.
       // Jika belum, arahkan ke Login. Token tetap akan divalidasi

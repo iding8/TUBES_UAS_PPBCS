@@ -14,11 +14,18 @@ class _PasienPageState extends State<PasienPage> {
   List<Pasien> pasienList = [];
   bool isLoading = true;
   String? errorMessage;
+  final _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadPasien();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadPasien() async {
@@ -27,7 +34,7 @@ class _PasienPageState extends State<PasienPage> {
       errorMessage = null;
     });
     try {
-      final data = await PasienService.getAll();
+      final data = await PasienService.getAll(search: _searchController.text.trim());
       setState(() {
         pasienList = data;
         isLoading = false;
@@ -76,18 +83,53 @@ class _PasienPageState extends State<PasienPage> {
     }
 
     return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: _loadPasien,
-        child: pasienList.isEmpty
-            ? ListView(
-                children: const [
-                  SizedBox(height: 120),
-                  Center(child: Text('Belum ada data pasien')),
-                ],
-              )
-            : ListView.builder(
-                itemCount: pasienList.length,
-                itemBuilder: (context, index) {
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Cari nama atau no. telepon...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                isDense: true,
+                suffixIcon: _searchController.text.isEmpty
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          _loadPasien();
+                        },
+                      ),
+              ),
+              onSubmitted: (_) => _loadPasien(),
+            ),
+          ),
+          Expanded(child: _buildPasienList()),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showPasienForm(context),
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Widget _buildPasienList() {
+    return RefreshIndicator(
+      onRefresh: _loadPasien,
+      child: pasienList.isEmpty
+          ? ListView(
+              children: const [
+                SizedBox(height: 120),
+                Center(child: Text('Belum ada data pasien')),
+              ],
+            )
+          : ListView.builder(
+              itemCount: pasienList.length,
+              itemBuilder: (context, index) {
                   final pasien = pasienList[index];
                   return Card(
                     margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -115,11 +157,6 @@ class _PasienPageState extends State<PasienPage> {
                   );
                 },
               ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showPasienForm(context),
-        child: const Icon(Icons.add),
-      ),
     );
   }
 

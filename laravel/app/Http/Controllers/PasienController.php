@@ -7,13 +7,27 @@ use Illuminate\Http\Request;
 
 class PasienController extends Controller
 {
-    // GET /api/pasien
-    public function index()
+    // GET /api/pasien?search=&per_page=
+    public function index(Request $request)
     {
-        $pasien = Pasien::orderBy('created_at', 'desc')->get();
+        $query = Pasien::query()->orderBy('created_at', 'desc');
+
+        if ($search = $request->query('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('nama', 'like', "%{$search}%")
+                  ->orWhere('no_telepon', 'like', "%{$search}%");
+            });
+        }
+
+        $perPage = (int) $request->query('per_page', 50);
+        $pasien = $query->paginate($perPage);
+
         return response()->json([
-            'message' => 'Berhasil mengambil data pasien',
-            'data'    => $pasien,
+            'message'      => 'Berhasil mengambil data pasien',
+            'data'         => $pasien->items(),
+            'current_page' => $pasien->currentPage(),
+            'last_page'    => $pasien->lastPage(),
+            'total'        => $pasien->total(),
         ]);
     }
 

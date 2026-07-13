@@ -9,7 +9,12 @@ class User extends Authenticatable
 {
     use HasApiTokens;
 
-    protected $fillable = ['name', 'email', 'password'];
+    protected $fillable = ['name', 'email', 'password', 'role'];
 
     protected $hidden = ['password'];
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
 }

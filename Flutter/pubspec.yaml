@@ -16,15 +16,15 @@ dev_dependencies:
   flutter_lints: ^3.0.0
 flutter:
   uses-material-design: true
-  assets:
-   # - assets/1.jpeg
+  # assets:
+  #   - assets/1.jpeg
 
-  # Custom font
-  fonts:
-    - family: Poppins
-      fonts:
-        - asset: assets/font/Poppins-Regular.ttf
-        - asset: assets/font/Poppins-SemiBold.ttf
-          weight: 600
-        - asset: assets/font/Poppins-Bold.ttf
-          weight: 700
+  # Custom font (nonaktif dulu, filenya belum ada — aktifkan lagi kalau sudah ditambahkan)
+  # fonts:
+  #   - family: Poppins
+  #     fonts:
+  #       - asset: assets/font/Poppins-Regular.ttf
+  #       - asset: assets/font/Poppins-SemiBold.ttf
+  #         weight: 600
+  #       - asset: assets/font/Poppins-Bold.ttf
+  #         weight: 700

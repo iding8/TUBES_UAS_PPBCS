@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/dokter.dart';
 import '../../services/dokter_service.dart';
 import '../../services/api_client.dart';
+import '../../services/auth_service.dart';
 
 class DokterPage extends StatefulWidget {
   const DokterPage({Key? key}) : super(key: key);
@@ -14,11 +15,21 @@ class _DokterPageState extends State<DokterPage> {
   List<Dokter> dokterList = [];
   bool isLoading = true;
   String? errorMessage;
+  final _searchController = TextEditingController();
+
+  /// Hanya admin yang boleh tambah/edit/hapus dokter — staff hanya bisa lihat.
+  bool get _isAdmin => AuthService.currentUser?.isAdmin ?? false;
 
   @override
   void initState() {
     super.initState();
     _loadDokter();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadDokter() async {
@@ -27,7 +38,7 @@ class _DokterPageState extends State<DokterPage> {
       errorMessage = null;
     });
     try {
-      final data = await DokterService.getAll();
+      final data = await DokterService.getAll(search: _searchController.text.trim());
       setState(() {
         dokterList = data;
         isLoading = false;
@@ -76,47 +87,79 @@ class _DokterPageState extends State<DokterPage> {
     }
 
     return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: _loadDokter,
-        child: dokterList.isEmpty
-            ? ListView(
-                children: const [
-                  SizedBox(height: 120),
-                  Center(child: Text('Belum ada data dokter')),
-                ],
-              )
-            : ListView.builder(
-                itemCount: dokterList.length,
-                itemBuilder: (context, index) {
-                  final dokter = dokterList[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    child: ListTile(
-                      leading: const CircleAvatar(child: Icon(Icons.medical_services)),
-                      title: Text(dokter.nama),
-                      subtitle: Text('${dokter.spesialisasi} | ${dokter.noTelepon}'),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit),
-                            onPressed: () => _showDokterForm(context, dokter: dokter),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed: () => _confirmDelete(dokter),
-                          ),
-                        ],
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Cari nama dokter...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                isDense: true,
+                suffixIcon: _searchController.text.isEmpty
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          _loadDokter();
+                        },
                       ),
-                    ),
-                  );
-                },
               ),
+              onSubmitted: (_) => _loadDokter(),
+            ),
+          ),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _loadDokter,
+              child: dokterList.isEmpty
+                  ? ListView(
+                      children: const [
+                        SizedBox(height: 120),
+                        Center(child: Text('Belum ada data dokter')),
+                      ],
+                    )
+                  : ListView.builder(
+                      itemCount: dokterList.length,
+                      itemBuilder: (context, index) {
+                        final dokter = dokterList[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          child: ListTile(
+                            leading: const CircleAvatar(child: Icon(Icons.medical_services)),
+                            title: Text(dokter.nama),
+                            subtitle: Text('${dokter.spesialisasi} | ${dokter.noTelepon}'),
+                            trailing: _isAdmin
+                                ? Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.edit),
+                                        onPressed: () => _showDokterForm(context, dokter: dokter),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete),
+                                        onPressed: () => _confirmDelete(dokter),
+                                      ),
+                                    ],
+                                  )
+                                : null,
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showDokterForm(context),
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: _isAdmin
+          ? FloatingActionButton(
+              onPressed: () => _showDokterForm(context),
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 
