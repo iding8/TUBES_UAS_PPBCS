@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'services/api_client.dart';
 import 'pages/auth/login_page.dart';
 import 'pages/home/home_page.dart';
+import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,10 +18,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Sistem Pendaftaran Pasien Klinik',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-      ),
+      theme: AppTheme.light,
       // Jika token tersimpan (pernah login), langsung ke Home.
       // Jika belum, arahkan ke Login. Token tetap akan divalidasi
       // oleh server pada setiap request (401 -> Sesi berakhir).

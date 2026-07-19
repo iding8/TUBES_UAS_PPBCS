@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/app_widgets.dart';
 import '../../models/dokter.dart';
 import '../../services/dokter_service.dart';
 import '../../services/api_client.dart';
@@ -58,7 +60,7 @@ class _DokterPageState extends State<DokterPage> {
 
   void _showSnack(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: isError ? Colors.red : null),
+      SnackBar(content: Text(message), backgroundColor: isError ? AppColors.danger : null),
     );
   }
 
@@ -69,39 +71,24 @@ class _DokterPageState extends State<DokterPage> {
     }
 
     if (errorMessage != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(errorMessage!, textAlign: TextAlign.center),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(onPressed: _loadDokter, child: const Text('Coba Lagi')),
-          ],
-        ),
-      );
+      return ErrorStateView(message: errorMessage!, onRetry: _loadDokter);
     }
 
     return Scaffold(
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Cari nama dokter...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                prefixIcon: const Icon(Icons.search_rounded, size: 21),
                 isDense: true,
                 suffixIcon: _searchController.text.isEmpty
                     ? null
                     : IconButton(
-                        icon: const Icon(Icons.clear),
+                        icon: const Icon(Icons.clear_rounded, size: 19),
                         onPressed: () {
                           _searchController.clear();
                           _loadDokter();
@@ -115,38 +102,35 @@ class _DokterPageState extends State<DokterPage> {
             child: RefreshIndicator(
               onRefresh: _loadDokter,
               child: dokterList.isEmpty
-                  ? ListView(
-                      children: const [
-                        SizedBox(height: 120),
-                        Center(child: Text('Belum ada data dokter')),
-                      ],
+                  ? const EmptyState(
+                      icon: Icons.medical_services_outlined,
+                      title: 'Belum ada data dokter',
                     )
                   : ListView.builder(
+                      padding: const EdgeInsets.only(top: 4, bottom: 90),
                       itemCount: dokterList.length,
                       itemBuilder: (context, index) {
                         final dokter = dokterList[index];
-                        return Card(
-                          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          child: ListTile(
-                            leading: const CircleAvatar(child: Icon(Icons.medical_services)),
-                            title: Text(dokter.nama),
-                            subtitle: Text('${dokter.spesialisasi} | ${dokter.noTelepon}'),
-                            trailing: _isAdmin
-                                ? Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(Icons.edit),
-                                        onPressed: () => _showDokterForm(context, dokter: dokter),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.delete),
-                                        onPressed: () => _confirmDelete(dokter),
-                                      ),
-                                    ],
-                                  )
-                                : null,
-                          ),
+                        return ElegantListCard(
+                          icon: Icons.medical_services_rounded,
+                          iconColor: AppColors.primary,
+                          title: 'dr. ${dokter.nama}',
+                          subtitle: '${dokter.spesialisasi} • ${dokter.noTelepon}',
+                          trailing: _isAdmin
+                              ? Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.edit_outlined, size: 20, color: AppColors.textSecondary),
+                                      onPressed: () => _showDokterForm(context, dokter: dokter),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_outline_rounded, size: 20, color: AppColors.danger),
+                                      onPressed: () => _confirmDelete(dokter),
+                                    ),
+                                  ],
+                                )
+                              : null,
                         );
                       },
                     ),
@@ -157,7 +141,7 @@ class _DokterPageState extends State<DokterPage> {
       floatingActionButton: _isAdmin
           ? FloatingActionButton(
               onPressed: () => _showDokterForm(context),
-              child: const Icon(Icons.add),
+              child: const Icon(Icons.add_rounded),
             )
           : null,
     );
@@ -173,7 +157,7 @@ class _DokterPageState extends State<DokterPage> {
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
             child: const Text('Hapus', style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -258,7 +242,7 @@ class _DokterPageState extends State<DokterPage> {
                       } on ApiException catch (e) {
                         setStateDialog(() => isSaving = false);
                         ScaffoldMessenger.of(dialogContext).showSnackBar(
-                          SnackBar(content: Text(e.message), backgroundColor: Colors.red),
+                          SnackBar(content: Text(e.message), backgroundColor: AppColors.danger),
                         );
                       }
                     },

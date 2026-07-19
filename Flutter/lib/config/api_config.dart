@@ -9,5 +9,5 @@
 /// - Jika sudah deploy ke hosting, ganti dengan domain aslinya,
 ///   contoh: https://klinikku.my.id/api
 class ApiConfig {
-  static const String baseUrl = "http://127.0.0.1:8000/api";
+  static const String baseUrl = "http://192.168.1.170:8000/api";
 }

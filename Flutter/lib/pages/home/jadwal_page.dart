@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/app_widgets.dart';
 import '../../models/jadwal_pemeriksaan.dart';
 import '../../models/pasien.dart';
 import '../../models/dokter.dart';
@@ -59,7 +61,7 @@ class _JadwalPageState extends State<JadwalPage> {
 
   void _showSnack(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: isError ? Colors.red : null),
+      SnackBar(content: Text(message), backgroundColor: isError ? AppColors.danger : null),
     );
   }
 
@@ -70,51 +72,34 @@ class _JadwalPageState extends State<JadwalPage> {
     }
 
     if (errorMessage != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(errorMessage!, textAlign: TextAlign.center),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(onPressed: _loadData, child: const Text('Coba Lagi')),
-          ],
-        ),
-      );
+      return ErrorStateView(message: errorMessage!, onRetry: _loadData);
     }
 
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: _loadData,
         child: jadwalList.isEmpty
-            ? ListView(
-                children: const [
-                  SizedBox(height: 120),
-                  Center(child: Text('Belum ada jadwal pemeriksaan')),
-                ],
+            ? const EmptyState(
+                icon: Icons.calendar_today_outlined,
+                title: 'Belum ada jadwal pemeriksaan',
               )
             : ListView.builder(
+                padding: const EdgeInsets.only(top: 10, bottom: 90),
                 itemCount: jadwalList.length,
                 itemBuilder: (context, index) {
                   final jadwal = jadwalList[index];
                   final namaPasien = jadwal.pasien?.nama ?? 'Tidak ditemukan';
                   final namaDokter = jadwal.dokter?.nama ?? 'Tidak ditemukan';
 
-                  return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    child: ListTile(
-                      leading: const Icon(Icons.calendar_today),
-                      title: Text('$namaPasien - $namaDokter'),
-                      subtitle: Text('${jadwal.tanggal} ${jadwal.waktu}\nKeluhan: ${jadwal.keluhan}'),
-                      isThreeLine: true,
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () => _confirmDelete(jadwal),
-                      ),
+                  return ElegantListCard(
+                    icon: Icons.event_note_rounded,
+                    iconColor: AppColors.secondary,
+                    title: '$namaPasien — dr. $namaDokter',
+                    subtitle: '${jadwal.tanggal} • ${jadwal.waktu}\nKeluhan: ${jadwal.keluhan}',
+                    threeLine: true,
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete_outline_rounded, size: 20, color: AppColors.danger),
+                      onPressed: () => _confirmDelete(jadwal),
                     ),
                   );
                 },
@@ -126,7 +111,7 @@ class _JadwalPageState extends State<JadwalPage> {
           if (!context.mounted) return;
           _showJadwalForm(context);
         },
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add_rounded),
       ),
     );
   }
@@ -141,7 +126,7 @@ class _JadwalPageState extends State<JadwalPage> {
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
             child: const Text('Hapus', style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -250,7 +235,7 @@ class _JadwalPageState extends State<JadwalPage> {
                       } on ApiException catch (e) {
                         setStateDialog(() => isSaving = false);
                         ScaffoldMessenger.of(dialogContext).showSnackBar(
-                          SnackBar(content: Text(e.message), backgroundColor: Colors.red),
+                          SnackBar(content: Text(e.message), backgroundColor: AppColors.danger),
                         );
                       }
                     },

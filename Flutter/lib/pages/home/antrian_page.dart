@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/app_widgets.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../../models/antrian.dart';
 import '../../models/pasien.dart';
@@ -70,7 +72,7 @@ class _AntrianPageState extends State<AntrianPage> {
 
   void _showSnack(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: isError ? Colors.red : null),
+      SnackBar(content: Text(message), backgroundColor: isError ? AppColors.danger : null),
     );
   }
 
@@ -87,13 +89,13 @@ class _AntrianPageState extends State<AntrianPage> {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'menunggu':
-        return Colors.orange;
+        return AppColors.warning;
       case 'dipanggil':
-        return Colors.blue;
+        return AppColors.primary;
       case 'selesai':
-        return Colors.green;
+        return AppColors.success;
       default:
-        return Colors.grey;
+        return AppColors.textSecondary;
     }
   }
 
@@ -104,21 +106,7 @@ class _AntrianPageState extends State<AntrianPage> {
     }
 
     if (errorMessage != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(errorMessage!, textAlign: TextAlign.center),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(onPressed: _loadData, child: const Text('Coba Lagi')),
-          ],
-        ),
-      );
+      return ErrorStateView(message: errorMessage!, onRetry: _loadData);
     }
 
     final antrianAktif = antrianList.where((a) => a.status == 'dipanggil').toList();
@@ -131,37 +119,47 @@ class _AntrianPageState extends State<AntrianPage> {
             if (antrianAktif.isNotEmpty)
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 22),
+                margin: const EdgeInsets.fromLTRB(16, 14, 16, 4),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blue, width: 2),
+                  gradient: const LinearGradient(
+                    colors: AppColors.heroGradient,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  boxShadow: AppShadows.soft,
                 ),
                 child: Column(
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        const Icon(Icons.campaign_rounded, color: Colors.white, size: 18),
+                        const SizedBox(width: 8),
                         const Text(
                           'ANTRIAN SAAT INI',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blue),
+                          style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.5),
                         ),
-                        const SizedBox(width: 16),
-                        IconButton(
-                          icon: const Icon(Icons.volume_up, color: Colors.blue),
-                          tooltip: 'Ulangi Panggilan',
-                          onPressed: () {
+                        const SizedBox(width: 10),
+                        InkWell(
+                          borderRadius: BorderRadius.circular(20),
+                          onTap: () {
                             if (antrianAktif.isNotEmpty) {
                               final antrian = antrianAktif.first;
                               final namaPasien = antrian.pasien?.nama ?? 'Tidak ditemukan';
                               _speakAntrian(antrian.nomorAntrian, namaPasien);
                             }
                           },
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(color: Colors.white.withOpacity(0.16), shape: BoxShape.circle),
+                            child: const Icon(Icons.volume_up_rounded, color: Colors.white, size: 18),
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 14),
                     ...antrianAktif.map((antrian) {
                       final namaPasien = antrian.pasien?.nama ?? 'Tidak ditemukan';
                       final namaDokter = antrian.dokter?.nama ?? 'Tidak ditemukan';
@@ -170,11 +168,11 @@ class _AntrianPageState extends State<AntrianPage> {
                         children: [
                           Text(
                             antrian.nomorAntrian,
-                            style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.blue),
+                            style: const TextStyle(fontSize: 52, fontWeight: FontWeight.w800, color: Colors.white, height: 1.05),
                           ),
-                          const SizedBox(height: 8),
-                          Text(namaPasien, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500)),
-                          Text('dr. $namaDokter', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+                          const SizedBox(height: 6),
+                          Text(namaPasien, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white)),
+                          Text('dr. $namaDokter', style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.85))),
                         ],
                       );
                     }),
@@ -182,7 +180,7 @@ class _AntrianPageState extends State<AntrianPage> {
                 ),
               ),
             Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
+              margin: const EdgeInsets.fromLTRB(16, 14, 16, 4),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
@@ -200,42 +198,66 @@ class _AntrianPageState extends State<AntrianPage> {
             ),
             Expanded(
               child: _filteredAntrian.isEmpty
-                  ? ListView(
-                      children: const [
-                        SizedBox(height: 80),
-                        Center(child: Text('Belum ada antrian')),
-                      ],
-                    )
+                  ? const EmptyState(icon: Icons.confirmation_number_outlined, title: 'Belum ada antrian')
                   : ListView.builder(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.only(top: 6, bottom: 90),
                       itemCount: _filteredAntrian.length,
                       itemBuilder: (context, index) {
                         final antrian = _filteredAntrian[index];
                         final namaPasien = antrian.pasien?.nama ?? 'Tidak ditemukan';
                         final namaDokter = antrian.dokter?.nama ?? 'Tidak ditemukan';
+                        final statusColor = _getStatusColor(antrian.status);
 
-                        return Card(
-                          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: _getStatusColor(antrian.status),
-                              child: Text(
-                                antrian.nomorAntrian,
-                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-                              ),
-                            ),
-                            title: Text(namaPasien),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                        return Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            boxShadow: AppShadows.card,
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: Row(
                               children: [
-                                Text('dr. $namaDokter'),
-                                Text(
-                                  'Waktu: ${antrian.waktuDaftar}',
-                                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                                Container(
+                                  width: 50,
+                                  height: 50,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(color: statusColor, borderRadius: BorderRadius.circular(14)),
+                                  child: Text(
+                                    antrian.nomorAntrian,
+                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12),
+                                    textAlign: TextAlign.center,
+                                  ),
                                 ),
-                              ],
-                            ),
-                            trailing: PopupMenuButton<String>(
+                                const SizedBox(width: 13),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              namaPasien,
+                                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          StatusBadge(status: antrian.status),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text('dr. $namaDokter', style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
+                                      Text(
+                                        'Waktu: ${antrian.waktuDaftar}',
+                                        style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                PopupMenuButton<String>(
                               onSelected: (value) async {
                                 try {
                                   if (value == 'delete') {
@@ -256,7 +278,7 @@ class _AntrianPageState extends State<AntrianPage> {
                                   const PopupMenuItem(
                                     value: 'dipanggil',
                                     child: Row(children: [
-                                      Icon(Icons.campaign, color: Colors.blue),
+                                      Icon(Icons.campaign, color: AppColors.primary),
                                       SizedBox(width: 8),
                                       Text('Panggil'),
                                     ]),
@@ -265,7 +287,7 @@ class _AntrianPageState extends State<AntrianPage> {
                                   const PopupMenuItem(
                                     value: 'selesai',
                                     child: Row(children: [
-                                      Icon(Icons.check_circle, color: Colors.green),
+                                      Icon(Icons.check_circle, color: AppColors.success),
                                       SizedBox(width: 8),
                                       Text('Selesai'),
                                     ]),
@@ -274,7 +296,7 @@ class _AntrianPageState extends State<AntrianPage> {
                                   const PopupMenuItem(
                                     value: 'menunggu',
                                     child: Row(children: [
-                                      Icon(Icons.access_time, color: Colors.orange),
+                                      Icon(Icons.access_time, color: AppColors.warning),
                                       SizedBox(width: 8),
                                       Text('Kembalikan ke Menunggu'),
                                     ]),
@@ -282,11 +304,13 @@ class _AntrianPageState extends State<AntrianPage> {
                                 const PopupMenuItem(
                                   value: 'delete',
                                   child: Row(children: [
-                                    Icon(Icons.delete, color: Colors.red),
+                                    Icon(Icons.delete, color: AppColors.danger),
                                     SizedBox(width: 8),
                                     Text('Hapus'),
                                   ]),
                                 ),
+                              ],
+                            ),
                               ],
                             ),
                           ),
@@ -311,7 +335,7 @@ class _AntrianPageState extends State<AntrianPage> {
       label: Text(label),
       selected: isSelected,
       onSelected: (selected) => setState(() => _filterStatus = label),
-      selectedColor: Colors.blue.shade100,
+      selectedColor: AppColors.primary.withOpacity(0.18),
     );
   }
 
@@ -372,7 +396,7 @@ class _AntrianPageState extends State<AntrianPage> {
                       } on ApiException catch (e) {
                         setStateDialog(() => isSaving = false);
                         ScaffoldMessenger.of(dialogContext).showSnackBar(
-                          SnackBar(content: Text(e.message), backgroundColor: Colors.red),
+                          SnackBar(content: Text(e.message), backgroundColor: AppColors.danger),
                         );
                       }
                     },
@@ -402,25 +426,25 @@ class _AntrianPageState extends State<AntrianPage> {
         content: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.blue.shade50,
+            color: AppColors.primary.withOpacity(0.08),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.blue, width: 2),
+            border: Border.all(color: AppColors.primary, width: 2),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.confirmation_number, size: 48, color: Colors.blue),
+              const Icon(Icons.confirmation_number, size: 48, color: AppColors.primary),
               const SizedBox(height: 16),
               Text(
                 antrian.nomorAntrian,
-                style: const TextStyle(fontSize: 72, fontWeight: FontWeight.bold, color: Colors.blue),
+                style: const TextStyle(fontSize: 72, fontWeight: FontWeight.bold, color: AppColors.primary),
               ),
               const SizedBox(height: 16),
               Text(namaPasien, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500), textAlign: TextAlign.center),
               const SizedBox(height: 8),
-              Text('dr. $namaDokter', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+              Text('dr. $namaDokter', style: TextStyle(fontSize: 16, color: AppColors.textSecondary)),
               const SizedBox(height: 8),
-              Text(spesialisasiDokter, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+              Text(spesialisasiDokter, style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
               const SizedBox(height: 16),
               Text('Waktu: ${antrian.waktuDaftar}', style: const TextStyle(fontSize: 14)),
             ],

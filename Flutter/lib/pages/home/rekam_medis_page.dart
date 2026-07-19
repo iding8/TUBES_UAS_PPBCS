@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/app_widgets.dart';
 import '../../models/rekam_medis.dart';
 import '../../models/pasien.dart';
 import '../../models/dokter.dart';
@@ -59,7 +61,7 @@ class _RekamMedisPageState extends State<RekamMedisPage> {
 
   void _showSnack(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: isError ? Colors.red : null),
+      SnackBar(content: Text(message), backgroundColor: isError ? AppColors.danger : null),
     );
   }
 
@@ -70,60 +72,35 @@ class _RekamMedisPageState extends State<RekamMedisPage> {
     }
 
     if (errorMessage != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(errorMessage!, textAlign: TextAlign.center),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(onPressed: _loadData, child: const Text('Coba Lagi')),
-          ],
-        ),
-      );
+      return ErrorStateView(message: errorMessage!, onRetry: _loadData);
     }
 
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: _loadData,
         child: rekamMedisList.isEmpty
-            ? ListView(
-                children: const [
-                  SizedBox(height: 120),
-                  Center(child: Text('Belum ada rekam medis')),
-                ],
+            ? const EmptyState(
+                icon: Icons.description_outlined,
+                title: 'Belum ada rekam medis',
               )
             : ListView.builder(
+                padding: const EdgeInsets.only(top: 10, bottom: 90),
                 itemCount: rekamMedisList.length,
                 itemBuilder: (context, index) {
                   final rekamMedis = rekamMedisList[index];
                   final namaPasien = rekamMedis.pasien?.nama ?? 'Tidak ditemukan';
                   final namaDokter = rekamMedis.dokter?.nama ?? 'Tidak ditemukan';
 
-                  return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    child: ListTile(
-                      leading: const Icon(Icons.description),
-                      title: Text(namaPasien),
-                      subtitle: Text('Dokter: $namaDokter\nDiagnosis: ${rekamMedis.diagnosis}'),
-                      isThreeLine: true,
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.visibility),
-                            onPressed: () => _showRekamMedisDetail(context, rekamMedis, namaPasien, namaDokter),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed: () => _confirmDelete(rekamMedis),
-                          ),
-                        ],
-                      ),
+                  return ElegantListCard(
+                    icon: Icons.description_rounded,
+                    iconColor: AppColors.success,
+                    title: namaPasien,
+                    subtitle: 'Dokter: $namaDokter\nDiagnosis: ${rekamMedis.diagnosis}',
+                    threeLine: true,
+                    onTap: () => _showRekamMedisDetail(context, rekamMedis, namaPasien, namaDokter),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete_outline_rounded, size: 20, color: AppColors.danger),
+                      onPressed: () => _confirmDelete(rekamMedis),
                     ),
                   );
                 },
@@ -131,7 +108,7 @@ class _RekamMedisPageState extends State<RekamMedisPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showRekamMedisForm(context),
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add_rounded),
       ),
     );
   }
@@ -146,7 +123,7 @@ class _RekamMedisPageState extends State<RekamMedisPage> {
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
             child: const Text('Hapus', style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -259,7 +236,7 @@ class _RekamMedisPageState extends State<RekamMedisPage> {
                       } on ApiException catch (e) {
                         setStateDialog(() => isSaving = false);
                         ScaffoldMessenger.of(dialogContext).showSnackBar(
-                          SnackBar(content: Text(e.message), backgroundColor: Colors.red),
+                          SnackBar(content: Text(e.message), backgroundColor: AppColors.danger),
                         );
                       }
                     },

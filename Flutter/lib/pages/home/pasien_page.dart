@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../models/pasien.dart';
 import '../../services/pasien_service.dart';
 import '../../services/api_client.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/app_widgets.dart';
 
 class PasienPage extends StatefulWidget {
   const PasienPage({Key? key}) : super(key: key);
@@ -54,7 +56,7 @@ class _PasienPageState extends State<PasienPage> {
 
   void _showSnack(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: isError ? Colors.red : null),
+      SnackBar(content: Text(message), backgroundColor: isError ? AppColors.danger : null),
     );
   }
 
@@ -65,39 +67,24 @@ class _PasienPageState extends State<PasienPage> {
     }
 
     if (errorMessage != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(errorMessage!, textAlign: TextAlign.center),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(onPressed: _loadPasien, child: const Text('Coba Lagi')),
-          ],
-        ),
-      );
+      return ErrorStateView(message: errorMessage!, onRetry: _loadPasien);
     }
 
     return Scaffold(
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Cari nama atau no. telepon...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                prefixIcon: const Icon(Icons.search_rounded, size: 21),
                 isDense: true,
                 suffixIcon: _searchController.text.isEmpty
                     ? null
                     : IconButton(
-                        icon: const Icon(Icons.clear),
+                        icon: const Icon(Icons.clear_rounded, size: 19),
                         onPressed: () {
                           _searchController.clear();
                           _loadPasien();
@@ -112,7 +99,7 @@ class _PasienPageState extends State<PasienPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showPasienForm(context),
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add_rounded),
       ),
     );
   }
@@ -121,38 +108,34 @@ class _PasienPageState extends State<PasienPage> {
     return RefreshIndicator(
       onRefresh: _loadPasien,
       child: pasienList.isEmpty
-          ? ListView(
-              children: const [
-                SizedBox(height: 120),
-                Center(child: Text('Belum ada data pasien')),
-              ],
+          ? const EmptyState(
+              icon: Icons.people_outline_rounded,
+              title: 'Belum ada data pasien',
+              subtitle: 'Ketuk tombol + untuk menambahkan pasien baru',
             )
           : ListView.builder(
+              padding: const EdgeInsets.only(top: 4, bottom: 90),
               itemCount: pasienList.length,
               itemBuilder: (context, index) {
                   final pasien = pasienList[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        child: Text(pasien.nama.isNotEmpty ? pasien.nama[0].toUpperCase() : '?'),
-                      ),
-                      title: Text(pasien.nama),
-                      subtitle: Text('${pasien.jenisKelamin} | ${pasien.noTelepon}'),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit),
-                            onPressed: () => _showPasienForm(context, pasien: pasien),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed: () => _confirmDelete(pasien),
-                          ),
-                        ],
-                      ),
-                      onTap: () => _showPasienDetail(context, pasien),
+                  return ElegantListCard(
+                    icon: pasien.jenisKelamin.toLowerCase().startsWith('l') ? Icons.man_rounded : Icons.woman_rounded,
+                    iconColor: pasien.jenisKelamin.toLowerCase().startsWith('l') ? AppColors.info : AppColors.secondary,
+                    title: pasien.nama,
+                    subtitle: '${pasien.jenisKelamin} • ${pasien.noTelepon}',
+                    onTap: () => _showPasienDetail(context, pasien),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit_outlined, size: 20, color: AppColors.textSecondary),
+                          onPressed: () => _showPasienForm(context, pasien: pasien),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline_rounded, size: 20, color: AppColors.danger),
+                          onPressed: () => _confirmDelete(pasien),
+                        ),
+                      ],
                     ),
                   );
                 },
@@ -170,7 +153,7 @@ class _PasienPageState extends State<PasienPage> {
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
             child: const Text('Hapus', style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -274,7 +257,7 @@ class _PasienPageState extends State<PasienPage> {
                       } on ApiException catch (e) {
                         setStateDialog(() => isSaving = false);
                         ScaffoldMessenger.of(dialogContext).showSnackBar(
-                          SnackBar(content: Text(e.message), backgroundColor: Colors.red),
+                          SnackBar(content: Text(e.message), backgroundColor: AppColors.danger),
                         );
                       }
                     },
